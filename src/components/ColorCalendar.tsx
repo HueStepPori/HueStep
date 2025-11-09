@@ -132,7 +132,7 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
                 
                 {marble && marble.colors.length > 0 ? (
                   <div className="absolute inset-0 top-5 flex items-center justify-center p-2">
-                    <div className="relative w-full h-full">
+                    <div className="relative w-3/4 h-3/4 aspect-square">
                       {/* 예쁜 bubble 구슬 - 완벽한 원형 */}
                       <div 
                         className="w-full h-full rounded-full"
@@ -154,7 +154,9 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="absolute inset-0 top-5 m-1.5 rounded-full bg-gray-50" />
+                  <div className="absolute inset-0 top-5 flex items-center justify-center">
+                    <div className="w-3/4 h-3/4 aspect-square rounded-full bg-gray-50" />
+                  </div>
                 )}
               </button>
             );
