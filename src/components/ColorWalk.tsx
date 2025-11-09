@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Camera, Plus, X, Droplet } from 'lucide-react';
 import { Button } from './ui/button';
 import { isSimilarColor } from '../utils/colorUtils';
@@ -22,6 +22,24 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
+  // preview가 변경될 때 원본 캔버스에 이미지 그리기 (색상 추출용)
+  useEffect(() => {
+    if (!preview || !imageRef.current) return;
+
+    const img = imageRef.current;
+    const canvas = canvasRef.current;
+    
+    if (canvas && img.complete) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+      }
+    }
+  }, [preview]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -30,7 +48,8 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
         const img = new Image();
         img.onload = () => {
           imageRef.current = img;
-          setPreview(event.target?.result as string);
+          const imageUrl = event.target?.result as string;
+          setPreview(imageUrl);
           setIsPickingColor(true);
           setPickedColor(null);
           
@@ -41,36 +60,43 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
             if (ctx) {
               canvas.width = img.width;
               canvas.height = img.height;
+              // 캔버스 초기화
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(img, 0, 0);
             }
           }
 
-          // 미리보기 캔버스에도 그리기
+          // 미리보기 캔버스 설정 (투명한 오버레이로 클릭 감지용)
           const previewCanvas = previewCanvasRef.current;
           if (previewCanvas) {
-            const ctx = previewCanvas.getContext('2d');
-            if (ctx) {
-              const maxWidth = 800;
-              const maxHeight = 600;
-              let width = img.width;
-              let height = img.height;
+            // 이미지의 표시 크기에 맞춰 캔버스 크기 설정
+            const maxWidth = 800;
+            const maxHeight = 600;
+            let displayWidth = img.width;
+            let displayHeight = img.height;
 
-              if (width > maxWidth || height > maxHeight) {
-                const ratio = Math.min(maxWidth / width, maxHeight / height);
-                width = width * ratio;
-                height = height * ratio;
-              }
-
-              previewCanvas.width = width;
-              previewCanvas.height = height;
-              ctx.drawImage(img, 0, 0, width, height);
+            if (displayWidth > maxWidth || displayHeight > maxHeight) {
+              const ratio = Math.min(maxWidth / displayWidth, maxHeight / displayHeight);
+              displayWidth = displayWidth * ratio;
+              displayHeight = displayHeight * ratio;
             }
+
+            previewCanvas.width = displayWidth;
+            previewCanvas.height = displayHeight;
           }
+        };
+        img.onerror = () => {
+          toast.error('이미지를 불러올 수 없습니다.');
         };
         img.src = event.target?.result as string;
       };
+      reader.onerror = () => {
+        toast.error('파일을 읽을 수 없습니다.');
+      };
       reader.readAsDataURL(file);
     }
+    // 같은 파일을 다시 선택할 수 있도록 input 초기화
+    e.target.value = '';
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -78,22 +104,57 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
 
     const canvas = canvasRef.current;
     const previewCanvas = previewCanvasRef.current;
-    if (!canvas || !previewCanvas) return;
+    if (!canvas || !previewCanvas || !imageRef.current) return;
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const rect = previewCanvas.getBoundingClientRect();
-    const scaleX = canvas.width / previewCanvas.width;
-    const scaleY = canvas.height / previewCanvas.height;
-    const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top) * scaleY);
-
-    const pixel = ctx.getImageData(x, y, 1, 1).data;
-    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+    const img = imageRef.current;
     
-    setPickedColor(hex);
-    setIsPickingColor(false);
+    // img 태그의 실제 표시 크기 계산
+    const imgElement = previewCanvas.parentElement?.querySelector('img');
+    if (!imgElement) return;
+    
+    const imgRect = imgElement.getBoundingClientRect();
+    const imgDisplayWidth = imgRect.width;
+    const imgDisplayHeight = imgRect.height;
+    
+    // 클릭 좌표를 img 태그 기준으로 변환
+    const clickX = e.clientX - imgRect.left;
+    const clickY = e.clientY - imgRect.top;
+    
+    // 클릭한 위치를 원본 이미지 좌표로 변환
+    const x = Math.floor((clickX / imgDisplayWidth) * img.width);
+    const y = Math.floor((clickY / imgDisplayHeight) * img.height);
+    
+    // 좌표 범위 검증
+    if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+      return;
+    }
+
+    try {
+      const imageData = ctx.getImageData(x, y, 1, 1);
+      const pixel = imageData.data;
+      
+      // RGBA 값 추출
+      const r = pixel[0];
+      const g = pixel[1];
+      const b = pixel[2];
+      
+      // 16진수로 변환 (항상 2자리로 패딩)
+      const toHex = (n: number) => {
+        const hex = n.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      
+      const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+      
+      setPickedColor(hex);
+      setIsPickingColor(false);
+    } catch (error) {
+      console.error('색상 추출 오류:', error);
+      toast.error('색상을 추출할 수 없습니다.');
+    }
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -102,10 +163,14 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
     const previewCanvas = previewCanvasRef.current;
     if (!previewCanvas) return;
 
-    const rect = previewCanvas.getBoundingClientRect();
+    // img 태그의 실제 위치를 기준으로 커서 위치 계산
+    const imgElement = previewCanvas.parentElement?.querySelector('img');
+    if (!imgElement) return;
+
+    const imgRect = imgElement.getBoundingClientRect();
     setCursorPosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX - imgRect.left,
+      y: e.clientY - imgRect.top,
     });
   };
 
@@ -202,14 +267,35 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
       ) : (
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="relative mb-4">
-            <canvas
-              ref={previewCanvasRef}
-              onClick={handleCanvasClick}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseLeave={() => setCursorPosition(null)}
-              className={`w-full max-h-96 rounded-2xl ${isPickingColor ? 'cursor-crosshair' : ''}`}
-              style={{ display: 'block' }}
-            />
+            <div className="relative w-full flex justify-center items-center bg-gray-50 rounded-2xl overflow-hidden min-h-[200px]">
+              {preview && (
+                <>
+                  <img
+                    src={preview}
+                    alt="Uploaded"
+                    className="max-w-full max-h-96 rounded-2xl"
+                    style={{ 
+                      display: 'block',
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: '600px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                  <canvas
+                    ref={previewCanvasRef}
+                    onClick={handleCanvasClick}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseLeave={() => setCursorPosition(null)}
+                    className={`absolute inset-0 w-full h-full ${isPickingColor ? 'cursor-crosshair' : 'cursor-pointer'}`}
+                    style={{ 
+                      pointerEvents: 'auto',
+                      opacity: 0
+                    }}
+                  />
+                </>
+              )}
+            </div>
             
             {isPickingColor && (
               <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
