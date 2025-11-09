@@ -7,7 +7,7 @@ import { WeeklyReport } from './components/WeeklyReport';
 import { PaletteShare } from './components/PaletteShare';
 import { Navbar } from './components/Navbar';
 import { Toaster } from './components/ui/sonner';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { isSimilarColor } from './utils/colorUtils';
 import { getRecommendedColor, allColors } from './utils/weatherColorRecommendation';
 

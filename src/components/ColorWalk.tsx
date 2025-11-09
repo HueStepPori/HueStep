@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Camera, Plus, X, Droplet } from 'lucide-react';
 import { Button } from './ui/button';
 import { isSimilarColor } from '../utils/colorUtils';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface ColorWalkProps {
   todayColor: string;
