@@ -9,10 +9,11 @@ interface ColorWalkProps {
   todayColorName: string;
   collectedColors: Array<{ color: string; imageUrl: string }>;
   onColorCollected: (color: string, imageUrl: string) => void;
+  onColorDeleted: (index: number) => void;
   onFinish: () => void;
 }
 
-export function ColorWalk({ todayColor, todayColorName, collectedColors, onColorCollected, onFinish }: ColorWalkProps) {
+export function ColorWalk({ todayColor, todayColorName, collectedColors, onColorCollected, onColorDeleted, onFinish }: ColorWalkProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
@@ -163,16 +164,25 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
           <p className="text-gray-500 mb-3">수집한 색상 ({collectedColors.length})</p>
           <div className="grid grid-cols-3 gap-3">
             {collectedColors.map((item, index) => (
-              <div key={index} className="flex flex-col gap-2">
-                <div 
-                  className="w-full aspect-square rounded-2xl shadow-md relative overflow-hidden"
-                  style={{ 
+              <div key={index} className="flex flex-col gap-2 group relative">
+                <div
+                  className="w-full aspect-square rounded-2xl shadow-md relative overflow-hidden"  // ★ CHANGED: overflow-hidden 추가
+                  style={{
                     backgroundImage: `url(${item.imageUrl})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
                   }}
                 >
-                  <div 
+                  <button
+                    type="button"  // ★ CHANGED: type 명시
+                    onClick={() => onColorDeleted(index)}
+                    className="absolute top-2 right-2 bg-white/90 hover:bg-red-500 hover:text-white rounded-full p-2 shadow-md transition-all z-20"  // ★ CHANGED: top/right 조정, z-강화
+                    title="삭제"
+                    aria-label="수집한 사진 삭제"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div
                     className="absolute bottom-0 inset-x-0 h-8 flex items-center justify-center"
                     style={{ backgroundColor: item.color }}
                   >
@@ -226,6 +236,15 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
                       opacity: 0
                     }}
                   />
+                  <button
+                    type="button"  // ★ CHANGED: type 명시
+                    onClick={handleCancel}
+                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md transition-colors z-20"
+                    title="사진 취소"
+                    aria-label="사진 취소"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </>
               )}
             </div>
@@ -267,15 +286,6 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
           )}
 
           <div className="flex gap-3">
-            <Button 
-              onClick={handleCancel}
-              variant="outline"
-              className="flex-1"
-            >
-              <X className="w-4 h-4 mr-2" />
-              취소
-            </Button>
-            
             {!isPickingColor && !pickedColor && (
               <Button 
                 onClick={() => setIsPickingColor(true)}

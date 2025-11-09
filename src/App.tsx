@@ -102,6 +102,14 @@ export default function App() {
     });
   };
 
+  const handleColorDeleted = (index: number) => {
+    const deletedColor = collectedColors[index];
+    setCollectedColors(prev => prev.filter((_, i) => i !== index));
+    toast.success('색상이 삭제되었습니다!', {
+      description: deletedColor.color,
+    });
+  };
+
   const handleFinishWalk = () => {
     const today = new Date().toISOString().split('T')[0];
     const newMarble: DayMarble = {
@@ -169,6 +177,7 @@ export default function App() {
             todayColorName={todayColorName}
             collectedColors={collectedColors}
             onColorCollected={handleColorCollected}
+            onColorDeleted={handleColorDeleted}
             onFinish={handleFinishWalk}
           />
         )}
