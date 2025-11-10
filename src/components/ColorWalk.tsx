@@ -501,26 +501,38 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
             </div>
           )}
 
-          <div className="flex gap-3">
-            {!isPickingColor && !pickedColor && (
-              <Button 
-                onClick={() => setIsPickingColor(true)}
-                className="flex-1 bg-blue-500 text-white hover:bg-blue-600"
-              >
-                <Droplet className="w-4 h-4 mr-2" />
-                다시 선택
-              </Button>
-            )}
-            
+          <div className="flex flex-col gap-3">
             {pickedColor && (
-              <Button 
-                onClick={handleSaveColor}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="w-full"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                색상 저장
+                사진 다시 고르기
               </Button>
             )}
+
+            <div className="flex gap-3">
+              {!isPickingColor && !pickedColor && (
+                <Button
+                  onClick={() => setIsPickingColor(true)}
+                  className="flex-1 bg-blue-500 text-white hover:bg-blue-600"
+                >
+                  <Droplet className="w-4 h-4 mr-2" />
+                  다시 선택
+                </Button>
+              )}
+
+              {pickedColor && (
+                <Button
+                  onClick={handleSaveColor}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  색상 저장
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
