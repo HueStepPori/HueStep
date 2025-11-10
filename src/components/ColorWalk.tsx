@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Camera, Plus, X, Droplet } from 'lucide-react';
+import { Camera, Plus, X, Droplet, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { isSimilarColor } from '../utils/colorUtils';
 import { toast } from 'sonner';
@@ -18,7 +18,9 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -133,6 +135,16 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
     setCursorPosition(null);
   };
 
+  const handleOpenCamera = () => {
+    setShowDropdown(false);
+    cameraInputRef.current?.click();
+  };
+
+  const handleOpenAlbum = () => {
+    setShowDropdown(false);
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="px-6 py-8 max-w-2xl mx-auto">
       <canvas ref={canvasRef} className="hidden" />
@@ -197,16 +209,39 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
 
       {/* 사진 촬영/업로드 영역 */}
       {!preview ? (
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-4 hover:border-gray-300 transition-colors"
-        >
-          <Camera className="w-16 h-16 text-gray-300" />
-          <div className="text-center">
-            <p className="text-gray-600 mb-1">사진 추가하기</p>
-            <p className="text-gray-400">스포이드로 원하는 색상을 선택하세요</p>
-          </div>
-        </button>
+        <>
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="w-full aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-4 hover:border-gray-300 transition-colors"
+          >
+            <Camera className="w-16 h-16 text-gray-300" />
+            <div className="text-center">
+              <p className="text-gray-600 mb-1">사진 추가하기</p>
+              <p className="text-gray-400">스포이드로 원하는 색상을 선택하세요</p>
+            </div>
+          </button>
+
+          {/* 드롭다운 메뉴 */}
+          {showDropdown && (
+            <div className="w-full bg-white rounded-2xl shadow-lg border border-gray-200 mt-3 mb-6">
+              <button
+                onClick={handleOpenCamera}
+                className="w-full px-6 py-4 flex items-center gap-4 hover:bg-blue-50 first:rounded-t-2xl transition-colors text-left text-gray-700"
+              >
+                <Camera className="w-6 h-6 text-blue-500" />
+                <span className="text-lg font-medium">카메라</span>
+              </button>
+              <div className="h-px bg-gray-100"></div>
+              <button
+                onClick={handleOpenAlbum}
+                className="w-full px-6 py-4 flex items-center gap-4 hover:bg-gray-50 last:rounded-b-2xl transition-colors text-left text-gray-700"
+              >
+                <Plus className="w-6 h-6 text-gray-600" />
+                <span className="text-lg font-medium">앨범</span>
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="relative mb-4">
@@ -309,10 +344,21 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
         </div>
       )}
 
+      {/* 앨범에서 선택 */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+      />
+
+      {/* 카메라 촬영 */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture={true}
         onChange={handleImageUpload}
         className="hidden"
       />
