@@ -25,7 +25,13 @@ interface CollectedColor {
 
 type View = 'home' | 'walk' | 'calendar' | 'report' | 'marble' | 'share';
 
-// 샘플 데이터 생성 - 다양한 색상
+// 날짜 기반 시드로 고정된 '랜덤' 값 생성
+const seededRandom = (seed: number): number => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
+// 샘플 데이터 생성 - 다양한 색상 (날짜 기반 고정)
 const generateSampleMarbles = (): DayMarble[] => {
   const marbles: DayMarble[] = [];
   const today = new Date();
@@ -49,20 +55,23 @@ const generateSampleMarbles = (): DayMarble[] => {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
 
-    // 각 날짜마다 다양한 색상 팔레트 중 선택
+    // 날짜를 숫자로 변환하여 시드로 사용
+    const dateSeed = parseInt(dateStr.replace(/-/g, ''));
+
+    // 각 날짜마다 다양한 색상 팔레트 중 선택 (날짜 기반 고정)
     const palette = colorPalettes[i % colorPalettes.length];
 
-    // 선택된 팔레트에서 랜덤하게 1~2개 색상 선택
-    const numColors = Math.floor(Math.random() * 2) + 1;
+    // 선택된 팔레트에서 1~2개 색상 선택 (날짜 기반 고정)
+    const numColors = Math.floor(seededRandom(dateSeed) * 2) + 1;
     const colors = Array.from({ length: numColors }, (_, idx) =>
       palette[idx % palette.length]
-    ).sort(() => Math.random() - 0.5);
+    );
 
     marbles.push({
       date: dateStr,
       colors,
-      steps: Math.floor(Math.random() * 8000) + 2000,
-      distance: +(Math.random() * 5 + 1).toFixed(1),
+      steps: Math.floor(seededRandom(dateSeed + 1) * 8000) + 2000,
+      distance: +(seededRandom(dateSeed + 2) * 5 + 1).toFixed(1),
     });
   }
 

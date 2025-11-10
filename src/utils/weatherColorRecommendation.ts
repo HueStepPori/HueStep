@@ -110,56 +110,70 @@ function getTimeOfDay(date: Date): 'morning' | 'afternoon' | 'evening' | 'night'
   return 'night';
 }
 
-// 날씨 시뮬레이션 (실제로는 날씨 API 사용)
-function getSimulatedWeather(): 'sunny' | 'cloudy' | 'rainy' | 'snowy' {
-  const month = new Date().getMonth() + 1;
-  const random = Math.random();
-  
+// 날짜 기반 시드로 고정된 '랜덤' 값 생성
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+// 날씨 시뮬레이션 (날짜 기반 고정)
+function getSimulatedWeather(date: Date): 'sunny' | 'cloudy' | 'rainy' | 'snowy' {
+  const month = date.getMonth() + 1;
+  const dateStr = date.toISOString().split('T')[0];
+  const dateSeed = parseInt(dateStr.replace(/-/g, ''));
+  const random = seededRandom(dateSeed);
+
   // 겨울에는 눈 가능성
   if (month === 12 || month === 1 || month === 2) {
     if (random < 0.2) return 'snowy';
   }
-  
+
   // 장마철 (6-7월)
   if (month === 6 || month === 7) {
     if (random < 0.4) return 'rainy';
   }
-  
+
   if (random < 0.5) return 'sunny';
   if (random < 0.75) return 'cloudy';
   return 'rainy';
 }
 
-// 메인 추천 함수
+// 메인 추천 함수 (날짜 기반 고정)
 export function getRecommendedColor(): ColorRecommendation {
   const now = new Date();
   const season = getSeason(now);
   const timeOfDay = getTimeOfDay(now);
-  const weather = getSimulatedWeather();
-  
-  // 우선순위: 날씨 > 계절 > 시간대
+  const weather = getSimulatedWeather(now);
+
+  // 날짜 기반 시드 생성
+  const dateStr = now.toISOString().split('T')[0];
+  const dateSeed = parseInt(dateStr.replace(/-/g, ''));
+  const selector = seededRandom(dateSeed);
+
+  // 우선순위: 날씨 > 계절 > 시간대 (날짜 기반 고정)
   let candidates: ColorRecommendation[] = [];
-  
+
   // 30% 확률로 날씨 기반
-  if (Math.random() < 0.3 && weatherColors[weather]) {
+  if (selector < 0.3 && weatherColors[weather]) {
     candidates = weatherColors[weather];
   }
   // 50% 확률로 계절 기반
-  else if (Math.random() < 0.7 && seasonalColors[season]) {
+  else if (selector < 0.8 && seasonalColors[season]) {
     candidates = seasonalColors[season];
   }
   // 20% 확률로 시간대 기반
   else if (timeColors[timeOfDay]) {
     candidates = timeColors[timeOfDay];
   }
-  
+
   // fallback: 계절 색상
   if (candidates.length === 0) {
     candidates = seasonalColors[season];
   }
-  
-  // 랜덤 선택
-  return candidates[Math.floor(Math.random() * candidates.length)];
+
+  // 날짜 기반으로 선택 (항상 같은 인덱스)
+  const colorIndex = Math.floor(seededRandom(dateSeed + 1) * candidates.length);
+  return candidates[colorIndex];
 }
 
 // 모든 색상 목록 (기존 호환성 유지)
