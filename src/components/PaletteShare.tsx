@@ -3,7 +3,6 @@ import { Download, Share2, X, Edit2, Check, Move, RefreshCw, ZoomIn, ZoomOut } f
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
-import { Slider } from "./ui/slider"; // 배경 이미지 확대축소용
 
 interface PaletteShareProps {
   colors: Array<{ color: string; imageUrl: string }>;
@@ -207,20 +206,20 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
 
     // 컬러 이름 (가장 크게)
     ctx.fillStyle = "#1f2937";
-    ctx.font = `bold ${Math.round(24 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+    ctx.font = `bold ${Math.round(26 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText(truncate(colorName, 16), x + 16 * s, y + h / 2 + 20 * s);
+    ctx.fillText(truncate(colorName, 16), x + 12 * s, y + h / 2 + 20 * s);
 
     // Hex 값 (중간)
     ctx.fillStyle = "#4b5563";
     ctx.font = `${Math.round(16 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-    ctx.fillText(`Hex: ${selectedColor.color}`, x + 16 * s, y + h / 2 + 38 * s);
+    ctx.fillText(`Hex: ${selectedColor.color}`, x + 12 * s, y + h / 2 + 38 * s);
 
     // 날짜 (가장 작게)
     ctx.fillStyle = "#9ca3af";
     ctx.font = `${Math.round(13 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-    ctx.fillText(date, x + 16 * s, y + h / 2 + 52 * s);
+    ctx.fillText(date, x + 12 * s, y + h / 2 + 52 * s);
 
     return canvas;
   };
@@ -465,13 +464,17 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
                     <Button size="icon" variant="ghost" onClick={() => setImgScale((v) => Math.max(0.5, v * 0.95))} className="text-gray-900 hover:bg-gray-200">
                       <ZoomOut className="w-4 h-4 text-gray-800" />
                     </Button>
-                    <Slider
-                      value={[imgScale]}
+                    <input
+                      type="range"
                       min={0.5}
                       max={4}
                       step={0.01}
-                      onValueChange={([v]) => setImgScale(v)}
-                      className="flex-1 py-1"
+                      value={imgScale}
+                      onChange={(e) => setImgScale(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #d1d5db 0%, #d1d5db 100%)`
+                      }}
                     />
                     <Button size="icon" variant="ghost" onClick={() => setImgScale((v) => Math.min(4, v * 1.05))} className="text-gray-900 hover:bg-gray-200">
                       <ZoomIn className="w-4 h-4 text-gray-800" />
