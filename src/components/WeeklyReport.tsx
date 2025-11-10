@@ -198,7 +198,7 @@ export function WeeklyReport({ marbles, todayColor }: WeeklyReportProps) {
                 {/* 예쁜 bubble 구슬 */}
                 <div
                   className="relative w-14 h-14 flex-shrink-0 rounded-full overflow-hidden"
-                  style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.15))', isolation: 'isolate' }}
+                  style={{ isolation: 'isolate' }}
                 >
                   {/* (A) 색 레이어 */}
                   {(marble.colors.length === 1

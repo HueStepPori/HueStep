@@ -232,7 +232,7 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
                   <div className="absolute inset-0 top-5 flex items-center justify-center p-2">
                     <div
                       className="relative w-3/4 h-3/4 aspect-square rounded-full overflow-hidden"
-                      style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.18))', isolation: 'isolate' }}
+                      style={{ isolation: 'isolate' }}
                     >
                       {/* (A) 색 레이어 */}
                       {(marble.colors.length === 1

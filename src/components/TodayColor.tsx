@@ -80,7 +80,7 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
       <div className="relative w-56 h-56 mb-8">
         <div
           className="w-full h-full rounded-full overflow-hidden relative"
-          style={{ filter: 'drop-shadow(0 10px 40px rgba(0,0,0,0.18))', isolation: 'isolate' }}
+          style={{ isolation: 'isolate' }}
         >
           {/* (A) 색 레이어 */}
           {getSingleBlobStyles(color).map((style, idx) => (
@@ -135,11 +135,6 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
           />
         </div>
 
-        {/* 바닥 그림자 */}
-        <div
-          className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-40 h-10 rounded-full blur-2xl opacity-30"
-          style={{ backgroundColor: color }}
-        />
       </div>
 
       {/* 색상 이름 편집 */}
