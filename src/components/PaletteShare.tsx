@@ -100,7 +100,11 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
     const dy = py - dragRef.current.start.y;
 
     if (dragRef.current.type === "card") {
-      setCardPos({ x: dragRef.current.startPos.x + dx, y: dragRef.current.startPos.y + dy });
+      // Calculate new position with clamping
+      const m = 12; // margin
+      const newX = Math.min(frame.w - m - cardW / 2, Math.max(m + cardW / 2, dragRef.current.startPos.x + dx));
+      const newY = Math.min(frame.h - m - cardH / 2, Math.max(m + cardH / 2, dragRef.current.startPos.y + dy));
+      setCardPos({ x: newX, y: newY });
     } else if (dragRef.current.type === "image") {
       setImgOffset({ x: dragRef.current.startOffset.x + dx, y: dragRef.current.startOffset.y + dy });
     }
