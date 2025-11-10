@@ -161,7 +161,7 @@ export default function App() {
       
       {/* 헤더 */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-sm md:max-w-2xl mx-auto px-6 py-4">
+        <div className="max-w-2xl mx-auto px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400" />
             <h1 className="text-gray-800">HueColor</h1>

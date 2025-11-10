@@ -261,7 +261,7 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
   };
 
   return (
-    <div className="px-4 md:px-6 py-8 max-w-sm md:max-w-2xl mx-auto">
+    <div className="px-6 py-6 max-w-2xl mx-auto h-screen overflow-y-auto">
       <canvas ref={canvasRef} className="hidden" />
       
       <div className="text-center mb-8">
@@ -331,8 +331,7 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
           >
             <Camera className="w-16 h-16 text-gray-300" />
             <div className="text-center">
-              <p className="text-gray-600 mb-1">사진 추가하기</p>
-              <p className="text-gray-400">스포이드로 원하는 색상을 선택하세요</p>
+              <p className="text-gray-600">사진 추가하기</p>
             </div>
           </button>
 
@@ -360,7 +359,7 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
       ) : !preview && (cameraState === 'preview' || cameraState === 'captured') ? (
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           {/* 카메라 화면 */}
-          <div className="relative mb-4 aspect-[9/16] bg-black rounded-2xl overflow-hidden">
+          <div className="relative mb-4 h-96 bg-black rounded-2xl overflow-hidden">
             {cameraState === 'preview' && (
               <>
                 <video
@@ -438,19 +437,17 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
       ) : (
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="relative mb-4">
-            <div className="relative w-full flex justify-center items-center bg-gray-50 rounded-2xl overflow-hidden min-h-[200px]">
+            <div className="relative w-full flex justify-center items-center bg-gray-50 rounded-2xl overflow-hidden h-64">
               {preview && (
                 <>
                   <img
                     src={preview}
                     alt="Uploaded"
-                    className="max-w-full max-h-96 rounded-2xl"
-                    style={{ 
-                      display: 'block',
+                    className="rounded-2xl"
+                    style={{
                       width: '100%',
-                      height: 'auto',
-                      maxHeight: '600px',
-                      objectFit: 'contain'
+                      height: '100%',
+                      objectFit: 'cover'
                     }}
                   />
                   <canvas

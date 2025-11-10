@@ -70,7 +70,7 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 pt-20">
       <div className="flex items-center gap-2 mb-8">
         <Sparkles className="w-5 h-5 text-purple-400" />
         <span className="text-gray-500">오늘의 컬러</span>

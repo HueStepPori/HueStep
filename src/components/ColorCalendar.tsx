@@ -159,7 +159,7 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
   const todayStr = getTodayString();
 
   return (
-    <div className="px-4 md:px-6 py-8 max-w-sm md:max-w-2xl mx-auto">
+    <div className="px-6 py-8 max-w-2xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="mb-2">컬러 캘린더</h2>
         <p className="text-gray-500">당신의 걸음이 색으로 기록됩니다</p>

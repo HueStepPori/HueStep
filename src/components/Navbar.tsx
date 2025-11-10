@@ -15,15 +15,15 @@ export function Navbar({ currentView, onNavigate }: NavbarProps) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50">
-      <div className="max-w-sm md:max-w-2xl mx-auto px-4">
-        <div className="flex items-center justify-around py-2 md:py-3">
+      <div className="max-w-2xl mx-auto px-4 w-full">
+        <div className="flex items-center justify-around py-3">
           {navItems.map(({ id, icon: Icon, label }) => {
             const isActive = currentView === id;
             return (
               <button
                 key={id}
                 onClick={() => onNavigate(id)}
-                className={`flex flex-col items-center gap-1 px-3 md:px-6 py-1 md:py-2 rounded-2xl transition-all ${
+                className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-[#9BCBF7]/10 to-[#A8E6CF]/10'
                     : 'hover:bg-gray-50'
