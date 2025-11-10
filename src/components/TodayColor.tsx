@@ -134,7 +134,6 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
             }}
           />
         </div>
-
       </div>
 
       {/* 색상 이름 편집 */}
@@ -153,7 +152,7 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
       ) : (
         <div className="flex items-center gap-2 mb-8">
           <h2>{colorName}</h2>
-          <button 
+          <button
             onClick={() => setIsEditingName(true)}
             className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
@@ -168,7 +167,7 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
         <span className="text-gray-700">{steps.toLocaleString()}걸음</span>
       </div>
 
-      <Button 
+      <Button
         onClick={onStartWalk}
         className="px-8 py-6 rounded-full shadow-lg text-white hover:opacity-90 transition-opacity"
         style={{

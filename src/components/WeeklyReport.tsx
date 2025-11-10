@@ -122,7 +122,7 @@ export function WeeklyReport({ marbles, todayColor }: WeeklyReportProps) {
   const avgSteps = Math.round(totalSteps / Math.max(recentMarbles.length, 1));
 
   return (
-    <div className="px-6 py-8 max-w-2xl mx-auto">
+    <div className="px-4 md:px-6 py-8 max-w-sm md:max-w-2xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="mb-2">주간 리포트</h2>
         <p className="text-gray-500">지난 7일간의 걸음을 돌아봐요</p>
@@ -249,7 +249,15 @@ export function WeeklyReport({ marbles, todayColor }: WeeklyReportProps) {
                     style={{
                       top: '24%', right: '26%', width: '18%', height: '18%',
                       background: 'radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%)',
-                      filter: 'blur(1px)', mixBlendMode: 'screen'
+                      filter: 'blur(2px)', mixBlendMode: 'screen'
+                    }}
+                  />
+                  <div
+                    className="absolute rounded-full"
+                    style={{
+                      top: '34%', right: '32%', width: '10%', height: '10%',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%)',
+                      filter: 'blur(1.5px)', mixBlendMode: 'screen'
                     }}
                   />
 

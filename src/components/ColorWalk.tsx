@@ -261,7 +261,7 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
   };
 
   return (
-    <div className="px-6 py-8 max-w-2xl mx-auto">
+    <div className="px-4 md:px-6 py-8 max-w-sm md:max-w-2xl mx-auto">
       <canvas ref={canvasRef} className="hidden" />
       
       <div className="text-center mb-8">

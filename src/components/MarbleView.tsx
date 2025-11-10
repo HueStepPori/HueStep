@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Footprints, MapPin, Palette } from 'lucide-react';
 import { Button } from './ui/button';
+import { adjustBrightness } from '../utils/colorUtils';
 
 interface MarbleViewProps {
   colors: string[];
@@ -11,12 +12,104 @@ interface MarbleViewProps {
   onShare: () => void;
 }
 
-export function MarbleView({ colors, steps, distance, date, onContinue, onShare }: MarbleViewProps) {
-  // 구슬 그라데이션 생성
-  const marbleGradient = colors.length > 0 
-    ? `linear-gradient(135deg, ${colors.join(', ')})`
-    : 'linear-gradient(135deg, #9BCBF7, #A8E6CF, #CBAACB)';
+// HEX → rgba
+const hexToRgba = (hex: string, a = 1) => {
+  const h = hex.replace('#', '');
+  const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(v, 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+};
 
+// ✅ 단일 색상 전용: 중앙 코어 + 대칭 글로우
+const getSingleBlobStyles = (color: string) => {
+  const styles: React.CSSProperties[] = [];
+
+  // (1) 중심 코어
+  styles.push({
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '9999px',
+    background: `
+      radial-gradient(circle at 50% 45%,
+        ${hexToRgba(adjustBrightness(color, 8), 0.95)} 0%,
+        ${hexToRgba(color, 0.90)} 28%,
+        ${hexToRgba(color, 0.55)} 55%,
+        ${hexToRgba(color, 0.00)} 78%)
+    `,
+    filter: 'blur(0.8px)',
+    opacity: 1,
+  } as React.CSSProperties);
+
+  // (2) 균일한 바깥 글로우(대칭)
+  styles.push({
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '9999px',
+    mixBlendMode: 'screen',
+    background: `
+      radial-gradient(circle at 50% 60%,
+        ${hexToRgba(color, 0.28)} 0%,
+        ${hexToRgba(color, 0.16)} 45%,
+        ${hexToRgba(color, 0.00)} 85%)
+    `,
+    filter: 'blur(1.5px)',
+    opacity: 0.95,
+  } as React.CSSProperties);
+
+  return styles;
+};
+
+// ✅ 다색용
+const getBlobStyles = (colors: string[]) => {
+  if (!colors?.length) return [];
+
+  const LAYERS_PER_COLOR = 2;
+  const radius = 42;
+  const spread = 10;
+  const sizePct = 58;
+  const alphaCenter = 0.65;
+
+  const styles: React.CSSProperties[] = [];
+
+  // 중앙 아주 약한 보강
+  styles.push({
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '9999px',
+    mixBlendMode: 'screen',
+    background: `radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,0.05) 0%,
+      rgba(255,255,255,0.00) 60%)`,
+  } as React.CSSProperties);
+
+  colors.forEach((c, i) => {
+    const baseAngle = (i / colors.length) * 360;
+    for (let k = 0; k < LAYERS_PER_COLOR; k++) {
+      const jitter = (k ? 1 : -1) * (spread / 2);
+      const angle = ((baseAngle + jitter) * Math.PI) / 180;
+      const cx = 50 + radius * Math.cos(angle);
+      const cy = 50 + radius * Math.sin(angle);
+
+      styles.push({
+        position: 'absolute',
+        inset: 0,
+        borderRadius: '9999px',
+        mixBlendMode: 'screen',
+        background: `radial-gradient(circle at ${cx}% ${cy}%,
+          ${hexToRgba(adjustBrightness(c, 10), alphaCenter)} 0%,
+          ${hexToRgba(c, 0.10)} ${sizePct}%,
+          ${hexToRgba(c, 0)} ${sizePct + 12}%)`,
+        filter: 'blur(2px)',
+        opacity: 0.95,
+      } as React.CSSProperties);
+    }
+  });
+
+  return styles;
+};
+
+export function MarbleView({ colors, steps, distance, date, onContinue, onShare }: MarbleViewProps) {
   // 걸음 수에 따른 구슬 크기
   const marbleSize = Math.min(280, 200 + (steps / 10000) * 80);
 
@@ -32,13 +125,13 @@ export function MarbleView({ colors, steps, distance, date, onContinue, onShare 
         <p className="text-gray-500">{date}</p>
       </motion.div>
 
-      {/* 반짝이는 유리구슬 */}
+      {/* 캘린더와 동일한 스타일의 구슬 */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ 
-          delay: 0.3, 
-          duration: 1, 
+        transition={{
+          delay: 0.3,
+          duration: 1,
           ease: "easeOut",
           type: "spring",
           stiffness: 100
@@ -46,75 +139,75 @@ export function MarbleView({ colors, steps, distance, date, onContinue, onShare 
         className="relative mb-12"
         style={{ width: marbleSize, height: marbleSize }}
       >
-        <div 
-          className="w-full h-full rounded-full shadow-2xl relative overflow-hidden"
-          style={{ background: marbleGradient }}
+        <div
+          className="w-full h-full rounded-full overflow-hidden relative"
+          style={{ isolation: 'isolate' }}
         >
-          {/* 유리 반사 효과 - 강화 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent rounded-full" />
-          
-          {/* 메인 하이라이트 - 좌상단 */}
-          <div className="absolute top-[12%] left-[22%] w-[38%] h-[38%] bg-white/50 rounded-full blur-2xl" />
-          
-          {/* 보조 하이라이트 */}
-          <div className="absolute top-[18%] left-[28%] w-[25%] h-[25%] bg-white/60 rounded-full blur-xl" />
-          
-                    {/* 반짝임 효과들 */}
-                    <motion.div
-            animate={{ 
-              opacity: [0.4, 1, 0.4],
-              scale: [1, 1.1, 1]
+          {/* (A) 색 레이어 */}
+          {(colors.length === 1
+            ? getSingleBlobStyles(colors[0])
+            : colors.length > 0
+            ? getBlobStyles(colors)
+            : getBlobStyles(['#9BCBF7', '#A8E6CF', '#CBAACB'])
+          ).map((style, idx) => (
+            <div key={idx} style={style} />
+          ))}
+
+          {/* (B) 내부 광원 */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              mixBlendMode: 'screen',
+              background: `
+                radial-gradient(circle at 40% 35%,
+                  rgba(255,255,255,0.5) 0%,
+                  rgba(255,255,255,0.2) 30%,
+                  rgba(255,255,255,0) 65%)
+              `
             }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute top-[22%] right-[24%] w-5 h-5 bg-white/80 rounded-full blur-sm"
           />
-          
-          <motion.div
-            animate={{ 
-              opacity: [0.3, 0.8, 0.3],
+
+          {/* (C) 림 라이트 */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              mixBlendMode: 'screen',
+              background: `
+                radial-gradient(circle,
+                  rgba(255,255,255,0) 60%,
+                  rgba(255,255,255,0.35) 80%,
+                  rgba(255,255,255,0) 85%)
+              `
             }}
-            transition={{ 
-              duration: 2.5, 
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5
-            }}
-            className="absolute top-[32%] right-[30%] w-3 h-3 bg-white/90 rounded-full"
           />
-          
-          <div className="absolute top-[28%] left-[65%] w-2 h-2 bg-white/70 rounded-full" />
-          
-          {/* 측면 반사광 */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-[10%] w-[8%] h-[30%] bg-white/20 rounded-full blur-lg" />
-          
-          {/* 하단 그림자 */}
-          <div className="absolute bottom-0 inset-x-0 h-2/5 bg-gradient-to-t from-black/15 via-black/5 to-transparent rounded-full" />
-          
-          {/* 전체 유리 광택 */}
-          <motion.div
-            animate={{ 
-              opacity: [0.2, 0.4, 0.2],
+
+          {/* (D) 작은 하이라이트 */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              top: '24%', right: '26%', width: '18%', height: '18%',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%)',
+              filter: 'blur(2px)', mixBlendMode: 'screen'
             }}
-            transition={{ 
-              duration: 3, 
-              repeat: Infinity,
-              ease: "easeInOut"
+          />
+          <div
+            className="absolute rounded-full"
+            style={{
+              top: '34%', right: '32%', width: '10%', height: '10%',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%)',
+              filter: 'blur(1.5px)', mixBlendMode: 'screen'
             }}
-            className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent rounded-full"
+          />
+
+          {/* (E) 안쪽 그림자 */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: 'radial-gradient(circle at 60% 68%, rgba(0,0,0,0.06), rgba(0,0,0,0) 55%)',
+              mixBlendMode: 'multiply'
+            }}
           />
         </div>
-        
-        {/* 바닥 그림자 */}
-        <div 
-          className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-3/4 h-12 rounded-full blur-2xl opacity-20"
-          style={{ 
-            background: colors.length > 0 ? colors[0] : '#999'
-          }}
-        />
       </motion.div>
 
       {/* 통계 정보 */}

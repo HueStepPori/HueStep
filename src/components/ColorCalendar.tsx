@@ -159,7 +159,7 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
   const todayStr = getTodayString();
 
   return (
-    <div className="px-6 py-8 max-w-2xl mx-auto">
+    <div className="px-4 md:px-6 py-8 max-w-sm md:max-w-2xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="mb-2">컬러 캘린더</h2>
         <p className="text-gray-500">당신의 걸음이 색으로 기록됩니다</p>
@@ -229,9 +229,9 @@ export function ColorCalendar({ marbles }: ColorCalendarProps) {
                 </div>
                 
                 {marble && marble.colors.length > 0 ? (
-                  <div className="absolute inset-0 top-5 flex items-center justify-center p-2">
+                  <div className="absolute inset-0 flex items-center justify-center p-2">
                     <div
-                      className="relative w-3/4 h-3/4 aspect-square rounded-full overflow-hidden"
+                      className="w-2/3 md:w-3/4 aspect-square rounded-full overflow-hidden"
                       style={{ isolation: 'isolate' }}
                     >
                       {/* (A) 색 레이어 */}
