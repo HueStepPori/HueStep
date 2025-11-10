@@ -13,17 +13,24 @@ interface ColorWalkProps {
   onFinish: () => void;
 }
 
+type CameraState = "initial" | "preview" | "captured";
+
 export function ColorWalk({ todayColor, todayColorName, collectedColors, onColorCollected, onColorDeleted, onFinish }: ColorWalkProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [cameraState, setCameraState] = useState<CameraState>("initial");
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const captureCanvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,9 +142,117 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
     setCursorPosition(null);
   };
 
-  const handleOpenCamera = () => {
+  const stopStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  const handleOpenCamera = async () => {
     setShowDropdown(false);
-    cameraInputRef.current?.click();
+    setCameraError(null);
+    setCameraState('preview');
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 1920 }
+        },
+        audio: false
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch (e) {
+          // iOS Safari: 사용자 제스처 필요
+        }
+      }
+    } catch (error: any) {
+      setCameraError(error?.message ?? '웹카메라를 사용할 수 없습니다.');
+      setCameraState('initial');
+      toast.error('웹카메라를 사용할 수 없습니다.');
+    }
+  };
+
+  const handleTakePhoto = () => {
+    if (!videoRef.current || !captureCanvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = captureCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const vw = video.videoWidth || 1080;
+    const vh = video.videoHeight || 1440;
+
+    canvas.width = 1080;
+    canvas.height = 1440;
+
+    // cover 스타일: 캔버스를 꽉 채우기
+    const scale = Math.max(1080 / vw, 1440 / vh);
+    const dx = (1080 - vw * scale) / 2;
+    const dy = (1440 - vh * scale) / 2;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.clearRect(0, 0, 1080, 1440);
+    ctx.drawImage(video, 0, 0, vw, vh, dx, dy, vw * scale, vh * scale);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    setCapturedImage(dataUrl);
+    setCameraState('captured');
+  };
+
+  const handleRetake = () => {
+    setCapturedImage(null);
+    setCameraState('preview');
+  };
+
+  const handleConfirmPhoto = () => {
+    if (!capturedImage) return;
+
+    // 카메라 스트림 종료
+    stopStream();
+    setCameraState('initial');
+
+    // 이미지 처리
+    const img = new Image();
+    img.onload = () => {
+      imageRef.current = img;
+      setPreview(capturedImage);
+      setIsPickingColor(true);
+      setPickedColor(null);
+      setCapturedImage(null);
+
+      // 색상 추출용 캔버스에 이미지 그리기
+      const colorCanvas = canvasRef.current;
+      if (colorCanvas) {
+        const colorCtx = colorCanvas.getContext('2d', { willReadFrequently: true });
+        if (colorCtx) {
+          colorCanvas.width = img.width;
+          colorCanvas.height = img.height;
+          colorCtx.clearRect(0, 0, colorCanvas.width, colorCanvas.height);
+          colorCtx.drawImage(img, 0, 0);
+        }
+      }
+    };
+    img.onerror = () => {
+      toast.error('이미지를 처리할 수 없습니다.');
+    };
+    img.src = capturedImage;
+  };
+
+  const handleCloseCamera = () => {
+    stopStream();
+    setCameraState('initial');
+    setCapturedImage(null);
+    setCameraError(null);
   };
 
   const handleOpenAlbum = () => {
@@ -208,7 +323,7 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
       )}
 
       {/* 사진 촬영/업로드 영역 */}
-      {!preview ? (
+      {!preview && cameraState === 'initial' ? (
         <>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
@@ -242,6 +357,84 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
             </div>
           )}
         </>
+      ) : !preview && (cameraState === 'preview' || cameraState === 'captured') ? (
+        <div className="bg-white rounded-3xl p-6 shadow-sm">
+          {/* 카메라 화면 */}
+          <div className="relative mb-4 aspect-[9/16] bg-black rounded-2xl overflow-hidden">
+            {cameraState === 'preview' && (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                {cameraError && (
+                  <div className="absolute inset-0 flex items-center justify-center text-white text-sm bg-black/30 text-center px-4">
+                    카메라 오류: {cameraError}
+                  </div>
+                )}
+              </>
+            )}
+
+            {cameraState === 'captured' && capturedImage && (
+              <img
+                src={capturedImage}
+                alt="captured"
+                className="w-full h-full object-cover"
+              />
+            )}
+
+            {/* 캡처용 캔버스 */}
+            <canvas ref={captureCanvasRef} className="hidden" />
+
+            {/* 닫기 버튼 */}
+            <button
+              type="button"
+              onClick={handleCloseCamera}
+              className="absolute top-4 right-4 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors z-20"
+              title="닫기"
+              aria-label="카메라 닫기"
+            >
+              <X className="w-6 h-6 text-gray-800" />
+            </button>
+          </div>
+
+          {/* 컨트롤 버튼 */}
+          <div className="flex gap-3">
+            {cameraState === 'preview' && (
+              <>
+                <Button
+                  onClick={handleTakePhoto}
+                  className="flex-1 bg-blue-500 text-white hover:bg-blue-600 py-3 rounded-full text-lg font-semibold"
+                >
+                  <Camera className="w-5 h-5 mr-2" />
+                  촬영
+                </Button>
+              </>
+            )}
+
+            {cameraState === 'captured' && (
+              <>
+                <Button
+                  onClick={handleRetake}
+                  variant="outline"
+                  className="flex-1 py-3 rounded-full text-lg font-semibold border-2"
+                >
+                  ↺ 재촬영
+                </Button>
+                <Button
+                  onClick={handleConfirmPhoto}
+                  variant="default"
+                  className="flex-1 !bg-lime-400 !text-white hover:!bg-lime-500 py-3 rounded-full text-lg font-semibold shadow-none border-none"
+                >
+                  ✓ 확인
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="relative mb-4">
@@ -271,15 +464,6 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
                       opacity: 0
                     }}
                   />
-                  <button
-                    type="button"  // ★ CHANGED: type 명시
-                    onClick={handleCancel}
-                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md transition-colors z-20"
-                    title="사진 취소"
-                    aria-label="사진 취소"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
                 </>
               )}
             </div>
@@ -349,16 +533,6 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={handleImageUpload}
-        className="hidden"
-      />
-
-      {/* 카메라 촬영 */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture={true}
         onChange={handleImageUpload}
         className="hidden"
       />
