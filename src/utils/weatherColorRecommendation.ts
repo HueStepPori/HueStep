@@ -141,6 +141,14 @@ function getSimulatedWeather(date: Date): 'sunny' | 'cloudy' | 'rainy' | 'snowy'
 // 메인 추천 함수 (날짜 기반 고정)
 export function getRecommendedColor(): ColorRecommendation {
   const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+
+  // 11월 11일은 바다색으로 고정
+  if (month === 11 && day === 11) {
+    return { color: '#0077B6', name: 'Ocean', desc: '바다' };
+  }
+
   const season = getSeason(now);
   const timeOfDay = getTimeOfDay(now);
   const weather = getSimulatedWeather(now);
