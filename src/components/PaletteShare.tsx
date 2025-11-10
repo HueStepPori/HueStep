@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Download, Share2, X, Edit2, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 interface PaletteShareProps {
   colors: Array<{ color: string; imageUrl: string }>;
@@ -14,55 +14,138 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [colorName, setColorName] = useState('My Color');
   const [isEditingName, setIsEditingName] = useState(false);
-  const paletteRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const selectedColor = colors[selectedImageIndex];
 
-  const handleDownload = async () => {
-    if (!paletteRef.current) return;
-
+  const generatePaletteImage = async (): Promise<Blob | null> => {
     try {
-      const canvas = await html2canvas(paletteRef.current, {
-        backgroundColor: null,
-        scale: 2,
-      });
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
 
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // 캔버스 크기 설정 (3:4 비율)
+      const width = 600;
+      const height = 800;
+      canvas.width = width;
+      canvas.height = height;
+
+      // 배경 이미지 로드
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          // 배경 이미지 그리기
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // 오버레이 그라데이션
+          const gradient = ctx.createLinearGradient(0, 0, 0, height);
+          gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+          gradient.addColorStop(0.3, 'rgba(0, 0, 0, 0.2)');
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, width, height);
+
+          // 색상 카드 배경 (하단)
+          const cardY = height - 200;
+          const cardHeight = 180;
+          const cardX = 40;
+          const cardWidth = width - 80;
+
+          // 카드 배경
+          ctx.fillStyle = selectedColor.color;
+          ctx.beginPath();
+          ctx.roundRect(cardX, cardY, cardWidth, cardHeight * 0.5, 16);
+          ctx.fill();
+
+          // 카드 흰색 부분
+          ctx.fillStyle = 'white';
+          ctx.beginPath();
+          ctx.roundRect(cardX, cardY + cardHeight * 0.5, cardWidth, cardHeight * 0.5, [0, 0, 16, 16]);
+          ctx.fill();
+
+          // 텍스트 그리기
+          ctx.fillStyle = '#1f2937';
+          ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(colorName, cardX + 24, cardY + cardHeight * 0.5 + 35);
+
+          ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillStyle = '#4b5563';
+          ctx.fillText(`Hex: ${selectedColor.color}`, cardX + 24, cardY + cardHeight * 0.5 + 60);
+          ctx.fillText(date, cardX + 24, cardY + cardHeight * 0.5 + 85);
+
+          // Canvas를 Blob으로 변환
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png', 0.95);
+        };
+        img.onerror = () => {
+          console.error('Failed to load image');
+          resolve(null);
+        };
+        img.src = selectedColor.imageUrl;
+      });
+    } catch (error) {
+      console.error('Failed to generate palette image:', error);
+      return null;
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const blob = await generatePaletteImage();
+      if (!blob) {
+        toast.error('이미지 생성에 실패했습니다.');
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `palette-${date}.png`;
-      link.href = canvas.toDataURL();
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
+      toast.success('팔레트가 저장되었습니다!');
     } catch (error) {
       console.error('Failed to download:', error);
+      toast.error('저장에 실패했습니다.');
     }
   };
 
   const handleShare = async () => {
-    if (!paletteRef.current) return;
-
     try {
-      const canvas = await html2canvas(paletteRef.current, {
-        backgroundColor: null,
-        scale: 2,
-      });
+      const blob = await generatePaletteImage();
+      if (!blob) {
+        toast.error('이미지 생성에 실패했습니다.');
+        return;
+      }
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
+      const file = new File([blob], `palette-${date}.png`, { type: 'image/png' });
 
-        const file = new File([blob], `palette-${date}.png`, { type: 'image/png' });
-
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'My Color Palette',
-            text: `${colorName} - ${date}`,
-          });
-        } else {
-          // 공유 API를 사용할 수 없으면 다운로드
-          handleDownload();
-        }
-      });
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'My Color Palette',
+          text: `${colorName} - ${date}`,
+        });
+        toast.success('공유되었습니다!');
+      } else {
+        // 공유 API를 사용할 수 없으면 다운로드
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `palette-${date}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('팔레트가 저장되었습니다!');
+      }
     } catch (error) {
       console.error('Failed to share:', error);
+      toast.error('공유에 실패했습니다.');
     }
   };
 
@@ -104,8 +187,8 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
           {/* 팔레트 미리보기 */}
           <div className="mb-6">
             <p className="text-gray-500 mb-3">미리보기</p>
-            
-            <div ref={paletteRef} className="relative rounded-2xl overflow-hidden shadow-2xl">
+
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               {/* 배경 이미지 */}
               <img
                 src={selectedColor.imageUrl}
@@ -190,6 +273,10 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
           </div>
         </div>
       </div>
+
+      {/* Hidden canvas for image generation */}
+      <canvas ref={canvasRef} className="hidden" />
+      <img ref={imageRef} className="hidden" />
     </div>
   );
 }
