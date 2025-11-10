@@ -25,29 +25,39 @@ interface CollectedColor {
 
 type View = 'home' | 'walk' | 'calendar' | 'report' | 'marble' | 'share';
 
-// 샘플 데이터 생성 - 비슷한 계열 색상만
+// 샘플 데이터 생성 - 다양한 색상
 const generateSampleMarbles = (): DayMarble[] => {
   const marbles: DayMarble[] = [];
   const today = new Date();
-  
+
+  // 다양한 색상 팔레트
+  const colorPalettes = [
+    ['#8B5CF6', '#A78BFA'], // 보라색
+    ['#FBBF24', '#FCD34D'], // 노란색
+    ['#10B981', '#34D399'], // 초록색
+    ['#3B82F6', '#60A5FA'], // 파란색
+    ['#9CA3AF', '#D1D5DB'], // 회색
+    ['#EC4899', '#F472B6'], // 핑크색
+    ['#F97316', '#FB923C'], // 주황색
+    ['#06B6D4', '#22D3EE'], // 청록색
+    ['#6366F1', '#818CF8'], // 인디고
+    ['#D946EF', '#E879F9'], // 마젠타
+  ];
+
   for (let i = 14; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
-    
-    // 하나의 기준 색상 선택
-    const baseColor = allColors[Math.floor(Math.random() * allColors.length)];
-    
-    // 비슷한 계열의 색상만 수집
-    const similarColors = allColors.filter(c => 
-      isSimilarColor(baseColor.color, c.color)
-    );
-    
-    const numColors = Math.min(Math.floor(Math.random() * 3) + 1, similarColors.length);
-    const colors = Array.from({ length: numColors }, (_, idx) => 
-      similarColors[idx % similarColors.length].color
-    );
-    
+
+    // 각 날짜마다 다양한 색상 팔레트 중 선택
+    const palette = colorPalettes[i % colorPalettes.length];
+
+    // 선택된 팔레트에서 랜덤하게 1~2개 색상 선택
+    const numColors = Math.floor(Math.random() * 2) + 1;
+    const colors = Array.from({ length: numColors }, (_, idx) =>
+      palette[idx % palette.length]
+    ).sort(() => Math.random() - 0.5);
+
     marbles.push({
       date: dateStr,
       colors,
@@ -55,7 +65,7 @@ const generateSampleMarbles = (): DayMarble[] => {
       distance: +(Math.random() * 5 + 1).toFixed(1),
     });
   }
-  
+
   return marbles;
 };
 
