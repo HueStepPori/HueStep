@@ -456,11 +456,19 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
                     onMouseMove={handleCanvasMouseMove}
                     onMouseLeave={() => setCursorPosition(null)}
                     className={`absolute inset-0 w-full h-full ${isPickingColor ? 'cursor-crosshair' : 'cursor-pointer'}`}
-                    style={{ 
+                    style={{
                       pointerEvents: 'auto',
                       opacity: 0
                     }}
                   />
+                  {/* X 버튼 - 이미지 위에 절대위치 */}
+                  <button
+                    onClick={handleCancel}
+                    className="absolute top-3 right-3 bg-white/90 hover:bg-red-500 hover:text-white rounded-full p-1.5 shadow-lg transition-colors z-30"
+                    title="사진 다시 고르기"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </>
               )}
             </div>
@@ -501,38 +509,26 @@ export function ColorWalk({ todayColor, todayColorName, collectedColors, onColor
             </div>
           )}
 
-          <div className="flex flex-col gap-3">
-            {pickedColor && (
+          <div className="flex gap-3">
+            {!isPickingColor && !pickedColor && (
               <Button
-                onClick={handleCancel}
-                variant="outline"
-                className="w-full"
+                onClick={() => setIsPickingColor(true)}
+                className="flex-1 bg-blue-500 text-white hover:bg-blue-600"
               >
-                사진 다시 고르기
+                <Droplet className="w-4 h-4 mr-2" />
+                다시 선택
               </Button>
             )}
 
-            <div className="flex gap-3">
-              {!isPickingColor && !pickedColor && (
-                <Button
-                  onClick={() => setIsPickingColor(true)}
-                  className="flex-1 bg-blue-500 text-white hover:bg-blue-600"
-                >
-                  <Droplet className="w-4 h-4 mr-2" />
-                  다시 선택
-                </Button>
-              )}
-
-              {pickedColor && (
-                <Button
-                  onClick={handleSaveColor}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  색상 저장
-                </Button>
-              )}
-            </div>
+            {pickedColor && (
+              <Button
+                onClick={handleSaveColor}
+                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                색상 저장
+              </Button>
+            )}
           </div>
         </div>
       )}

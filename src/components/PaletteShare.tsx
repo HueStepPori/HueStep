@@ -3,7 +3,7 @@ import { Download, Share2, X, Edit2, Check, Move, RefreshCw, ZoomIn, ZoomOut } f
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
-import { Slider } from "./ui/slider";
+import { Slider } from "./ui/slider"; // 배경 이미지 확대축소용
 
 interface PaletteShareProps {
   colors: Array<{ color: string; imageUrl: string }>;
@@ -31,7 +31,7 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
   // ---- Palette card transform (position & scale) -----------------------------
   // position is the card center point in preview coords
   const [cardPos, setCardPos] = useState<Point>({ x: PREVIEW_SIZE / 2, y: PREVIEW_SIZE * 0.78 });
-  const [cardScale, setCardScale] = useState(0.60); // 0.50 ~ 0.90 recommended (min 0.50 to prevent text cutoff)
+  const [cardScale] = useState(0.40); // 고정 값: 40%
 
   // drag state
   const dragRef = useRef<{ type: "image" | "card" | null; start: Point; startPos: Point; startOffset: Point } | null>(null);
@@ -197,13 +197,6 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
     ctx.closePath();
     ctx.fill();
 
-    // subtle sheen on color area
-    const sheen = ctx.createLinearGradient(x, y, x + w, y + h * 0.55);
-    sheen.addColorStop(0, "rgba(255,255,255,0.08)");
-    sheen.addColorStop(0.5, "rgba(255,255,255,0.00)");
-    sheen.addColorStop(1, "rgba(0,0,0,0.08)");
-    ctx.fillStyle = sheen;
-    ctx.fillRect(x, y, w, h * 0.55);
 
     // text (sizes scale with card) - 이름이 가장 크게, Hex, 날짜 순
     const textScaleFactor = cardScale;
@@ -213,17 +206,17 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
     ctx.font = `bold ${Math.round(24 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillText(truncate(colorName, 16), x + 16 * s, y + h * 0.55 + 24 * s);
+    ctx.fillText(truncate(colorName, 16), x + 16 * s, y + h / 2 + 20 * s);
 
     // Hex 값 (중간)
     ctx.fillStyle = "#4b5563";
     ctx.font = `${Math.round(16 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-    ctx.fillText(`Hex: ${selectedColor.color}`, x + 16 * s, y + h * 0.55 + 42 * s);
+    ctx.fillText(`Hex: ${selectedColor.color}`, x + 16 * s, y + h / 2 + 38 * s);
 
     // 날짜 (가장 작게)
     ctx.fillStyle = "#9ca3af";
     ctx.font = `${Math.round(13 * textScaleFactor * s)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-    ctx.fillText(date, x + 16 * s, y + h * 0.55 + 56 * s);
+    ctx.fillText(date, x + 16 * s, y + h / 2 + 52 * s);
 
     return canvas;
   };
@@ -328,14 +321,14 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
 
         <div className="p-6 space-y-6">
           {/* 대표 사진 선택 */}
-          <section>
-            <p className="text-gray-500 mb-3 text-sm">대표 사진 선택</p>
-            <div className="flex gap-2 flex-wrap overflow-x-auto max-h-20 overflow-y-auto pb-1">
+          <section className="pb-8">
+            <p className="text-gray-500 mb-4">대표 사진 선택</p>
+            <div className="flex gap-2 flex-wrap overflow-x-auto pb-1 scrollbar-hide">
               {colors.map((item, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`w-14 h-14 rounded-lg overflow-hidden transition-all flex-shrink-0 ${
+                  className={`w-16 h-16 rounded-xl overflow-hidden transition-all flex-shrink-0 ${
                     selectedImageIndex === index
                       ? "ring-3 ring-purple-500 scale-105"
                       : "ring-2 ring-gray-200 hover:ring-gray-300"
@@ -452,7 +445,7 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
               </div>
 
               {/* Controls */}
-              <div className="w-full space-y-4 text-gray-900 border-t-2 border-black pt-4">
+              <div className="w-full space-y-3 text-gray-900 border-t-2 border-black pt-4">
                 <Button onClick={resetTransforms} className="w-full gap-2 bg-gray-900 hover:bg-black text-black py-3 font-semibold">
                   <RefreshCw className="w-4 h-4" /> 초기화
                 </Button>
@@ -482,30 +475,6 @@ export function PaletteShare({ colors, date, onClose }: PaletteShareProps) {
                   </div>
                 </div>
 
-                <div className="h-px bg-black"></div>
-
-                <div className="p-4 rounded-2xl bg-gray-100 border-none">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-semibold text-gray-900">팔레트 카드 크기</div>
-                    <span className="text-xs text-gray-600">{Math.round(cardScale * 100)}%</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button size="icon" variant="ghost" onClick={() => setCardScale((v) => Math.max(0.35, v - 0.05))} className="text-gray-900 hover:bg-gray-200">
-                      <ZoomOut className="w-4 h-4 text-gray-800" />
-                    </Button>
-                    <Slider
-                      value={[cardScale]}
-                      min={0.35}
-                      max={0.9}
-                      step={0.01}
-                      onValueChange={([v]) => setCardScale(v)}
-                      className="flex-1 py-1"
-                    />
-                    <Button size="icon" variant="ghost" onClick={() => setCardScale((v) => Math.min(0.9, v + 0.05))} className="text-gray-900 hover:bg-gray-200">
-                      <ZoomIn className="w-4 h-4 text-gray-800" />
-                    </Button>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
