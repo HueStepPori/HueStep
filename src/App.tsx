@@ -144,6 +144,10 @@ export default function App() {
       return [...filtered, newMarble];
     });
 
+    // 워크 종료 시 걸음 수와 km수를 0으로 초기화
+    setCurrentSteps(0);
+    setCollectedColors([]);
+
     setCurrentView('marble');
   };
 
