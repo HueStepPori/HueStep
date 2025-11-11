@@ -178,7 +178,7 @@ export function TodayColor({ color, colorName, steps, onStartWalk, onColorNameCh
       </Button>
 
       <p className="text-gray-400 mt-4 text-center max-w-xs">
-        산책하며 {colorName}을 찾아보세요!
+        산책하며 {colorName}을(를) 찾아보세요!
       </p>
     </div>
   );
